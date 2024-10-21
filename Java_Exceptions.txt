@@ -1,0 +1,155 @@
+------------------------------------------------------------------------------------------------------------------------
+MULTIPLE CATCHES
+------------------------------------------------------------------------------------------------------------------------
+Every exception is a class and an instance of a class when thrown (objects)
+
+So, every exception is part of a hierarchy, example:
+
+Object
+   |
+  ...
+   |
+ParentException
+   |
+ChildException
+
+
+You can 'chain' try/catch when dealing with exception. But in doing so, you need to respect the hierarchy.
+
+try {
+    // code
+} catch (ChildException ex) {
+    // handler
+} catch (ParentException ex) {
+    // handler
+}
+
+In this example, this is possible and recomended, but you have to respect the hierarchy, starting with the child exceptions
+(most specific exception first to then the more broad exceptions)
+
+Practical example:
+
+catch(NumberFormatException ex) {} catch(IllegalArgumentException ex) {} catch(RuntimeException ex) {}
+
+'RuntimeException' is a broad class that almost every exception extends from. So almost all exceptions will be caught in this
+In this example, if we were to do the 'catch(RuntimeException ex)' first, then the other catches would never be reached (unreachable statements).
+
+-----------------------------
+It's also possible to catch more than 1 exception in one catch:
+catch(Exception1 | Exception2 ex) {}        -> This is possible but also the types put in multi-catch must be disjoint
+
+-> The types must not extend from one another
+-> This is useful only when the code that handles the exception is the same for both exceptions
+
+------------------------------------------------------------------------------------------------------------------------
+FINALLY
+------------------------------------------------------------------------------------------------------------------------
+- The 'finally' syntax, when declared, ALWAYS execute, no matter if the 'try' block executes or the 'catch' block executes,
+the 'finally' block will always execute
+
+- It's useful to close things, like closing a DB connection and so on.
+
+- When you put a 'finally' clause, you can skip the 'catch' clause. But it isn't very useful/recomended.
+
+try {
+    // open file/DB
+} catch(ExceptionType ex) {
+    // handler
+} finally {
+    // close file/DB
+}
+
+------------------------------------------------------------------------------------------------------------------------
+TRY-WITH-RESOURCES
+------------------------------------------------------------------------------------------------------------------------
+try(resource1; resource2) {
+
+}
+
+This syntax is new, and it allows us to put 'resources' in the 'try' clause. Observations:
+- When doing this, the resources must be objects that need to be closed (FileInputStream, BufferedReader, etc)
+
+- The resources are 'closed' when the try/catch block ends (similar to a 'finally' clause, but it is implicit and it's
+as if the compiler put a 'finally' clause behind the scenes for us, that closes the resources)
+
+- When doing this, there's no need to declare the 'catch' and 'finally' clauses. THEY ARE OPTIONAL. But to opt to not
+  declare the 'catch' clause, the method in which it's implemented needs to throw a possible exception that can be
+  caught inside the 'try' clause
+
+Example:
+try(FileInputStream in = new FileInputStream("in.txt");
+    FileOutputStream out = new FileOutputStream("out.txt")) {
+
+    out.write(in.readAllBytes());
+
+}
+
+- At the end, the 'in' and 'out' are closed automatically.
+
+- For this to work, the method must throw IOException. If it doesn't, you need to declare the 'catch' clause
+
+- Also, you have to declare the object of the resource inside the brackets '()'
+--- Example of something wrong:
+FileInputStream in
+try(in = new FileInputStream())
+--- This example is WRONG. The resource 'in' must be declared inside the brackets
+--- Because of this, you can only use the resource inside the 'try' block
+
+- The resources are closed in reverse order. So in the example above, first the JRE will close the 'out' and then the 'in'
+
+- If you want to create a class that can be declared as a resource in the TRY-WITH-RESOURCES, the class must:
+--- implements AutoCloseable
+--- Override the method 'close'
+
+------------------------------------------------------------------------------------------------------------------------
+OBSERVATIONS
+------------------------------------------------------------------------------------------------------------------------
+There's 2 main types of exceptions:
+1. CHECKED EXCEPTIONS   -> The compiler can see if you don't handle the exception. It 'checks' to see if the exception is handled
+
+2. UNCHECKED EXCEPTIONS -> Also called RUNTIME EXCEPTIONS. The compiler doesn't check to see if you are handling the
+                           Exception. You could choose to not handle the exception and the program will compile just fine.
+
+ALL the UNCHECKED EXCEPTIONS extends the RuntimeException. If you see a Exception that extends the RuntimeException, then
+it's an unchecked exception.
+
+-----------------------------------
+COMMON RuntimeException Classes
+-----------------------------------
+ArithmeticException
+ArrayIndexOutOfBoundsException
+ClassCastException
+IllegalArgumentException
+IllegalStateException
+NullPointerException
+NumberFormatException
+
+-----------------------------------
+COMMON Checked Exception Classes
+-----------------------------------
+IOException
+FileNotFoundException
+FileSystemException
+NoSuchFileException
+AccessDeniedException
+
+------------------------------------------------------------------------------------------------------------------------
+THROWING EXCEPTIONS
+------------------------------------------------------------------------------------------------------------------------
+public void myMethod1() throws IOException {
+    if(...) {throw new IOException();}
+    ...
+}
+
+public void myMethod2() throws IllegalArgumentException {
+    if(...) {throw new IllegalArgumentException();}
+    ...
+}
+
+This is the syntax to throw an exception
+- Unchecked Exceptions (RuntimeExceptions) don't need to be in the method signature
+--- And the caller doesn't need to handle it either
+--- Also you can throw an unchecked exception without it being in the method signature
+
+- Checked Exceptions MUST ALWAYS be in the method signature if the method may throw that exception
+--- And the caller must always handle that exception

@@ -1,0 +1,315 @@
+Java I/O Classes
+Feature         Abstract Class          Low Level Implem.               High Level Implem.
+Reading chars   Reader                  FileReader                      BufferedReader
+                                        CharArrayReader                 LineNumberReader
+                                        StringReader                    InputStreamReader
+
+Writing chars   Writer                  FileWriter                      BufferedWriter
+                                        CharArrayWriter                 OutputStreamWriter
+                                        StringWriter
+                                        PrintWriter
+
+Reading Bytes   InputStream             FileInputStream                 BufferedWriter
+                                        ByteArrayInputStream            DataInputStream
+                                                                        ObjectInputStream
+
+Writing Bytes   OutputStream            FileOutputStream                BufferedInputStream
+                                        ByteArrayOutputStream           DataOutputStream
+                                        PrintStream                     ObjectOutputStream
+------------------------------------------------------------------------------------------------------------------------
+FILE CLASS
+------------------------------------------------------------------------------------------------------------------------
+Accepts a String that points to a file or a directory.
+Ex.: "files/myfile.txt"
+
+METHODS:
+exists
+isDirectory
+isFile
+createNewFile       -> If the File object was created as a file (isFile == true)
+mkdir
+mkdirs              -> Create several directories and subdirectories if needed. Ex.:
+                       Directory: C:\File\
+                       File file = new File("File\data\myfolder");
+                       -> This will create the 'data' folder and the 'myfolder' inside the 'data' folder
+delete              -> Deletes a file or directory
+getName
+getParent
+getPath
+getAbsolutePath
+getCanonicalPath
+
+------------------------------------------------------------------------------------------------------------------------
+PATH (INTERFACE)
+------------------------------------------------------------------------------------------------------------------------
+The Path interface was created because the File class doesn't inform you or allow you to make specific implementations
+based on what system you're running. So if you wanted to make a specific implementation to Windows computers, the File
+Class wouldn't give you the tools to do so.
+
+The Path interface allows you to know the system you're working on and make specific implementations for the system,
+being: Windows, macOS or Linux.
+
+METHODS:
+Paths.get("files/myfile.txt")   -> Static method that returns a Path (usually WindowsPath)
+Path.of("files/myfile.txt")     -> Static method that returns a Path (usually WindowsPath)
+.getClass()                     -> Returns the specific implementation of the Path Interface
+isAbsolut
+getRoot
+resolve                         -> Path resolve = path1.resolve(path2) -> concatenate both paths
+resolveSibling                  -> Path resolve = path1.resolveSibling(path2) -> concatenate paths and if both are files,
+                                   the resulting path will be the directory of path1 and file of path2
+relativize                      -> Path relat = path1.relativize(path2) -> returns the relative directory if you want to
+                                   go from path1 to path2. Ex.:
+                                   path1 = "c:\videos\"
+                                   path2 = "c:\images\pngs"
+                                   relat = "..\images\pngs" (accessing directory from path2 being in path1)
+normalize                       -> Path norm = path1.normalize() -> Transform the directory in its pure normal form. Ex:
+                                   path1 = "videos\..\videos\..\videos" (This happens when working with paths in java)
+                                   norm = "videos"
+getFileSystem
+------------------------------------------------------------------------------------------------------------------------
+READER (INTERFACE)
+------------------------------------------------------------------------------------------------------------------------
+FileReader
+--------------
+Reader reader = new FileReader("files/myfile.txt");
+
+char[] buffer = new char[16];
+
+int numberOfCharacterRead = reader.read(buffer);    // Fills the buffer with array of chars from the file and returns
+                                                       number of characters that were read from the file. The "read"
+                                                       method must be called several times in order to read the full
+                                                       file.
+StringBuilder sb = new StringBuilder();
+
+while(numberOfCharacterRead > 0) {                  // While characters were read from the file
+    sb.append(buffer, 0, numberOfCharacterRead);    // Append them in a String (using StringBilder)
+    numberOfCharacterRead = reader.read(buffer);    // Calls the method again to read more
+}
+
+reader.close();         // Important. Must ALWAYS close the file
+
+--------------
+BufferedReader
+--------------
+Path path = Path.of("files/myfiles.txt");
+BufferedReader bufferedReader = Files.newBufferedReader(path);
+
+String line = bufferedReader.readLine();            // Reads line by line
+
+while(line != null) {
+...
+}
+---------
+Other way
+---------
+Stream<String> lines = bufferedReader.lines();
+lines.forEach(System.out::println);
+
+--------------
+StringReader
+--------------
+
+
+--------------
+CharArrayReader
+--------------
+
+------------------------------------------------------------------------------------------------------------------------
+WRITER (INTERFACE)
+------------------------------------------------------------------------------------------------------------------------
+FileWriter
+--------------
+Writer writer = new FileWriter("files/myfile.txt");
+
+writer.write("Hello World!");
+
+writer.close()      // Can be ignored if you use the 'try-with-resources'
+
+
+--------------
+StringWriter
+--------------
+Writer writer = new StringWriter();
+
+writer.write("Hello world!");
+
+writer.flush();
+
+StringBuffer buffer = writer.getBuffer();       // Basically the StringWriter writes a StringBuffer and you can return
+                                                   the StringBuffer directly like the example here.
+
+String finalString = writer.toString()          // Or you can return the resulting String from the StringBuffer
+
+writer.close()      // Can be ignored if you use the 'try-with-resources'
+
+
+--------------
+BufferedWriter
+--------------
+FileWriter filewriter = new FileWriter("files/myfile.txt");
+
+BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+bufferedWriter.write("Writing to a buffered writer");  // This will write on the buffer object inside the BufferedWriter
+                                                          Object, but will no write in the file yet.
+
+bufferedWriter.flush();                             // This method is used to put the content in the buffer to the file
+                                                       specified in the fileWriter Object passed when creating the
+                                                       bufferedWriter
+------
+Other way of doing this:
+------
+Path path = Path.of("files/myfile.txt");
+BufferedWriter bufferedWriter = Files.newBufferedWriter(path);  // See JsonReader.class
+...
+--------------
+CharArrayWriter
+--------------
+
+------------------------------------------------------------------------------------------------------------------------
+INPUTSTREAM / OUTPUTSTREAM
+------------------------------------------------------------------------------------------------------------------------
+They are used to write bytes. If you want to write/read characters, use reader/writer instead
+
+--------------
+OutputStream
+--------------
+ byte[] header = {0xc, 0xA, 0xF, 0xE, ...};
+
+try(OutputStream os = new FileOutputStream("files/myfile.bin")) {
+    os.write(header);
+}
+
+--------------
+InputStream
+--------------
+try(InputStream is = new FileInputStream("files/myfile.bin");) {
+
+    byte[] allBytes = is.readAllBytes();
+
+    for(byte allByte : allBytes) {
+        System.out.printf("0x%x", allByte);
+    }
+}
+
+--------------
+ByteArrayOutputStream
+--------------
+The OutputStreamWriter is a writer that writes bytes (outputstream) based on a String or char[]
+
+ByteArrayOutputStream buffer = null;
+
+try(ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    OutputStreamWriter writer = new OutputStreamWriter(bos);) {
+
+    writer.write("Hello World!");
+    buffer = bos;
+}
+
+byte[] bytes = buffer.toByteArray();        // Here we are converting the String above ("Hello World!") that was written
+                                               in the OutputStreamWriter in an ByteArrayOutputStream, in byte[]
+
+--------------
+ByteArrayInputStream
+--------------
+try(ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+    InputStreamReader isr = new InputStreamReader(bis);
+    BufferedReader reader = new BufferedReader(isr);) {
+
+    String s = reader.readLine();       // Here, the 'BufferedReader' was only created to call this specific method (readLine)
+                                           but if you want, you can skip this object and read the content directly
+                                           in the InputStreamReader
+}
+
+
+--------------
+DataOutputStream
+--------------
+int[] ints = {1, 2, 3, 4, 5};
+byte[] bytes = {};
+
+try(ByteArrayOutputStream os = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(os);) {
+
+    for(int integer : ints) {
+        dos.writeInt(integer);
+    }
+    dos.flush();
+    bytes = os.toByteArray();
+
+}
+
+--------------
+DataInputStream
+--------------
+try(ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+    DataInputStream dis = new DataInputStream(bis);) {
+
+    for(int i = 0; i < bytes.length; i++) {
+        int read = dis.readInt();
+    }
+}
+
+------------------------------------------------------------------------------------------------------------------------
+SERIALIZATION (ObjectOutputStream / ObjectInputStream)
+------------------------------------------------------------------------------------------------------------------------
+ObjectOutputStream
+--------------
+User u1 = new User("Eduardo");      // This is my object that I want to serialize. The Class must implement the
+                                       'Serializable' interface
+User u2 = new User("Nicole");
+
+try(FileOutputStream fos = new FileOutputStream("files/myfile.bin");
+    ObjectOutputStream oos = new ObjectOutputStream(fos);) {
+
+    oos.writeObject(u1);
+    oos.writeObject(u2);
+}
+
+--------------
+ObjectInputStream
+--------------
+try(FileInputStream fis = new FileInputStream("files/myfile.bin");
+    ObjectInputStream ois = new ObjectInputStream(fis);) {
+
+    User u1 = (User) ois.readObject();              // For this to work, the class must exist in the project, otherwise
+                                                       it will throw the ClassNotFoundException
+    User u2 = (User) ois.readObject();              // Or if the class written in the file have certain attributes and
+                                                       you change the class (attribute names, methods, etc) then it'll
+                                                       throw a InvalidClassException
+}
+
+------------------------------------------------------------------------------------------------------------------------
+CONSOLE
+------------------------------------------------------------------------------------------------------------------------
+It's possible for us to write on the console.
+It's synchronized and a singleton. So every time you call 'System.console()' it'll return the same object.
+Since it's synchronized, when using multiple threads, it won't have any conflict issues.
+
+
+Console console = System.console();
+
+PrintWriter writer = console.writer();      // This PrintWriter class is a Writer from Java IO. The console.writer()
+                                               returns a writer for us to use (it's a singleton as well). If you're running this in IntelliJ, it
+                                               won't work, because IntelliJ doesn't give us a console when running the
+                                               application inside de IDE. To run properly, you must run on the console
+                                               inside the IDE (or CMD outside the IDE).
+
+writer.println("Hello World!");             // In this example, the PrintWriter have all the capabilities of printf from C
+                                               or println, etc.
+
+String name = console.readLine();           // We can use this readLine method to read the line that the user will type
+                                               on the console, similar to a scanf in C
+
+OTHER METHODS:
+readPassword                                // similar to readLine, but doesn't display the chars
+reader                                      // Returns a LineReader to work on. Usually used in condom with Scanner. Ex.:
+
+Reader reader = console.reader();           // This LineReader cannot be closed, because it is intertwined with the console
+                                               object (it's a singleton as well)
+
+List<String> colors = new Scanner(reader)   // We can use the Stream API directly on the Scanner object
+                        .useDelimiter(" ")
+                        .tokens()
+                        .collect(Collectors.toList());

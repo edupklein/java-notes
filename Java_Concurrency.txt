@@ -1,0 +1,257 @@
+------------------------------------------------------------------------------------------------------------------------
+THREADS     -> Creating
+------------------------------------------------------------------------------------------------------------------------
+Java already has many threads being executed by the JRE. Including when you run the "main" method, it is itself a thread
+
+- The main method is a thread
+- You can get information about the main thread.
+
+To use threads, you can:
+
+------------------------------------------------
+Create a Thread object passing a Runnable (functional interface: lambda expression, method reference)
+------------------------------------------------
+Thread t = new Thread(() -> System.out.println("Runnable: " + Thread.currentThread().getId()));
+t.start();
+System.out.println("Main: " + Thread.currentThread().getId());
+
+- This way, we are creating a new thread passing to the constructor a lambda expression that turns to a Runnable object
+- We can start the thread using t.start();
+
+------------------------------------------------
+Create a Class that extends Thread
+------------------------------------------------
+public class MyClass extends Thread {
+
+    @Override
+    public void run() {
+        ...
+    }
+}
+
+- To use this:
+
+MyClass mc = new MyClass();
+mc.start();                     // You must call 'start' to start the thread and not 'run'
+
+------------------------------------------------
+Create a Class that implements Runnable and passing an object of said class to a Thread object
+------------------------------------------------
+public class MyClass implements Runnable {
+
+    @Override
+    public void run() {
+        ...
+    }
+}
+
+- To use this:
+Thread t = new Thread(new MyClass());
+t.start();
+
+------------------------------------------------
+Create a Class that implements Callable (see the ExecutorService section below)
+------------------------------------------------
+
+------------------------------------------------------------------------------------------------------------------------
+THREADS     -> Manipulating
+------------------------------------------------------------------------------------------------------------------------
+METHODS:
+sleep
+-> Puts the Thread to sleep in milliseconds. Useful to save resources for when running a backgroud thread
+   but not very recommended because it can cause problems to close the application
+
+interrupt
+-> Forces the Thread to interrupt. If the Thread is sleeping, it stops the 'sleep' method and throws InterruptedException
+   If the Thread is not sleeping, it sets a flag 'interrupt' and the Thread cannot sleep again. Usually if the flag 'interrupt'
+   is set, you have to make sure the Thread stops executing (the logic in the code must stop ASAP).
+
+join
+-> Method called to specify the Thread to be executed first than the main thread. If you pass by parameter milliseconds
+   then the Thread is executed while the main thread is on 'hold' for that amount of milliseconds, then when it's over, the
+   main Thread continue executing again. If you don't pass milliseconds, then the Thread is executed until it ends and then
+   the main Thread continues.
+
+------------------------------------------------------------------------------------------------------------------------
+THREADS     -> Syncing
+------------------------------------------------------------------------------------------------------------------------
+Synchronized
+--------------------------
+-> Keyword to put in methods. If you put this keyword, the method only allows for 1 Thread to execute the method at any
+   given time. So if you have multiple Threads calling the method, it will only execute 1 Thread at a time.
+   NOTE: If the method is static, this is valid for all the Threads calling the method.
+         If the method is from an instance, only the given instance being called allows for 1 Thread executing it.
+         So, if you have more than 1 instance (more than 1 object) and several Threads calling the method from different
+         instances, they will execute the method all at the same time.
+
+-> You can put the synchronized keyword in a 'block' of code, passing an object by parameter. Ex.:
+public static myMethod() {
+    synchronized(myObject) {            // Here usually is like 'synchronized(this)'
+        ...                             // So the current object of the class if being passed by parameter
+    }                                   // This object is locked for the duration of the synchronized block
+}                                       // (only the Thread executing the block has access to it and other
+                                        // Threads that want to execute this block must wait for the first
+                                        // Thread to finish
+
+-> If you do as above, you are specifying a block of code to synchronize between Threads.
+
+--------------------------
+ReentrantLock
+--------------------------
+-> This class allows for us to lock/unlock the code similar to the synchronized keyword. Ex.:
+private Lock lock = new ReentrantLock();
+
+public static myMethod() {
+    lock.lock();            // This forces the first Thread to enter here to be able to execute the code
+    ...                     // while the other Threads must wait for the 'unlock' of the first Thread to
+    lock.unlock();          // be able to execute
+}
+
+-> Usually this 'lock' class is used in combination with try/finally, to ensure that the 'unlock' will be
+   called even if some exception is thrown. Ex.:
+try{
+    lock.lock();
+    ...
+}finally{
+    lock.unlock();
+}
+
+-> If you want to lock the code for only 1 Thread to execute it at one time, BUT you don't want the other
+   Threads just waiting and doing nothing, you can use the 'tryLock' method. Example below:
+if(lock.tryLock()) {
+    try{
+        ...
+    }finally{
+        lock.unlock();
+    }
+}else{
+    ...                 // Here you can put other code to be executed by the Threads that couldn't execute the
+}                       // code in the lock
+
+-> You can also specify some time for the Thread to wait for the lock, like so:
+if(lock.tryLock(1000, Time.MILLISECONDS)) {
+...
+
+------------------------------------------------------------------------------------------------------------------------
+ExecutorService
+------------------------------------------------------------------------------------------------------------------------
+This is an interface to allows us to specify code to be executed over multiple Threads. Ex.:
+
+ExecutorService es = Executors.newSingleThreadExecutor(); // This will create an executor with only 1 thread
+
+es.execute(() -> ...);              // We can call this method to execute some code. It receives a Runnable
+es.execute(() -> ...);              // (lambda expression or method reference)
+es.execute(() -> ...);
+
+es.shutdown();              // This must ALWAYS be called after we're done
+
+-------------------------------
+Callable (similar to Runnable)
+-------------------------------
+ExecutorService es = Executors.newSingleThreadExecutor();
+List<Callable<...>> callables = new ArrayList<Callable>();
+callables.add(() -> ...);
+callables.add(() -> ...);
+
+es.invokeAny(callables);        // Here we are passing a list of callables, and this method executes one of the
+                                // elements on the list
+
+es.invokeAll(callables);        // Here we are passing the same list, but the 'invokeAll' will execute every callable
+                                // on the list
+
+es.awaitTermination(10, TimeUnit.MINUTES);  // Terminate after 10 minutes
+
+OTHER WAY OF DOING IT
+Usually when we use the Callable with ExecutorService, we must call the method 'submit' that returns a Future<>
+Example:
+
+private ExecutorService es = Executors.newCachedThreadPool();
+
+public Future<Double> myMethod() {
+    return es.submit(() -> {            // This 'submit' method is receiving a lambda expressing and converting
+        return Math.random()...         // it into a Callable (since it expects a Callable)
+    });
+}
+
+public static void main(String[] args) {
+    Future<Double> myDouble = myMethod();
+}
+
+FUTURE METHODS
+Note that the Future is a class that represents a future data or object.
+
+isDone                      -> Returns if the Future is done and the object is available
+isCancelled                 -> Returns if the Future was cancelled
+cancel                      -> Cancel the Future
+get                         -> Get the object from the Future (if it's ready. If it's not ready, it'll throw an exception)
+get(100, TimeUnit.MILLISECONDS) -> Wait for the time specified and then try to get the object
+
+
+Examples:
+if(myDouble.isDone()) {
+    myDouble.get();
+}
+
+OTHER EXECUTORSERVICES:
+SingleThreadExecutor
+-> Single Thread executor
+
+SingleThreadScheduledExecutor
+-> Single Thread executor with possibility to delay some time between tasks
+-> For this, you must use the 'schedule' method to submit the callables
+
+CachedThreadPool
+-> Thread pool (multiple Threads) that are created on the go, on demand, if a there's no Thread available, it creates
+   new Threads to execute the task. The Threads created remain active some time after being done executing the task
+   because some new task can come in. After some time, if no new task gets submitted, the Threads that are idle are killed.
+
+FixedThreadPool
+-> Thread pool (multiple Threads) with fixed value of Threads that are specified on creation.
+
+ScheduledThreadPool
+- METHODS:
+schedule                -> Receives a callable to schedule with the time to execute
+
+scheduleWithFixedDelay  -> Receives a callable and schedule it to run in the pool multiple times, with some delay between
+                           them. Waits for them to finish to them schedule the next one
+
+scheduleWithFixedRate   -> Same thing as the other, but it receives some time to schedule the callables without waiting
+                           for them to finish
+
+------------------------------------------------------------------------------------------------------------------------
+COLLECTIONS
+------------------------------------------------------------------------------------------------------------------------
+Collections are not Thread safe. So if a Thread is reading from a Collection (List, Map, etc) and other Thread is puting
+things in the Collection, we might have a problem.
+
+To solve this we have:
+------------------------------
+ConcurrentCollections
+------------------------------
+These are Collections that have synchronized methods that change the elements (put, remove, add)
+- These are called atomic operations.
+
+So, if any Threads accessing the Collection were to change the elements (put, remove, add) the Thread is granted full access
+while other Threads must wait the other Thread to finish modifying the Collection.
+
+Examples:
+ConcurrentHashMap
+ConcurrentSkipListMap
+ConcurrentNavigableMap
+CopyOnWriteArrayList
+
+
+You can also get a synchronized collection using the methods bellow:
+Collections.synchronizedList(list)
+Collections.synchronizedMap(map)
+Collections.synchronizedSet(set)
+Collections.synchronizedCollection(collection)
+
+-> These synchronized collections are great for turning regular collections into synchronized ones
+-> HOWEVER, they're bad at performance. It's recommended to use the ConcurrentCollections
+-> Also, these synchronized collections can't be modified in a loop
+------------------------------
+BlockingQueue (similar to ConcurrentCollections, but with 'queue'
+------------------------------
+LinkedBlockingQueue
+

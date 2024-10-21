@@ -1,0 +1,371 @@
+Enviar requisição HTTP via CMD:
+curl -v http://localhost:8080/examples/
+
+------------------------------------------------------------------------------------------------------------------------
+TOMCAT ARCHITECTURE
+------------------------------------------------------------------------------------------------------------------------
+STEPS
+1. Web browser (HTTP Request)
+
+2. Coyote (TCP/IP Connection)
+
+3. Catalina (Parses HTTP, convert into objects and fetches the servlet)
+
+4. Web-Apps (Hosts all the Servlets (APPS). Gives Catalina the appropriate Servlet)
+4.1. If the Servlet is a JSP, then the JSP is send to Jasper to process it first
+
+5. Catalina again (Gets resources if specified by the APP, like data from a database)
+
+6. Catalina converts the information returned by the Servlet and converts into HTTP response
+
+7. Coyote receives the HTTP response from Catalina and sends it back to:
+
+8. Web browser receives HTTP response from Coyote
+I
+NOTES:
+-> A TCP/IP connection is made between Web browser and Coyote and stays persistent during the HTTP Request <-> HTTP Response
+---> After the HTTP Response, the TCP/IP socket is disconnected
+
+------------------------------------------------------------------------------------------------------------------------
+SERVLET
+------------------------------------------------------------------------------------------------------------------------
+Jakarta Servlet API:
+
+    javax.Servlet
+          |
+    GenericServlet
+          |
+    HttpServlet
+          |
+com.example.DeveloperServlet        -> Here is the class created by the developer
+
+OBSERVATIONS:
+Servlets usually override the methods 'doGet', 'doPost', 'doDelete', in which represent the HTTP REST API and the code
+to run when a GET, POST, DELETE, http request is sent
+
+
+Usually these methods receive the request (HttpServletRequest) and response (HttpServletResponse) objects.
+-> The request object is to retrieve data and information from the request that was sent from the browser (header, language, body, etc.)
+-> The response object is to manipulate and create information to be sent back as the HTTP response from the server
+
+
+When dealing with Servlets, there are some objects that remains instantiated to help you:
+- ServletContext: The context of that specific Servlet, in which stays in memory across all requests, even between
+                  different browsers
+- HttpSession: The object that represents the Session with the browser, in which stays in memory across requests, but
+               for each different browser there's a different object
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+CREATING A WAR FILE
+------------------------------------------------------------------------------------------------------------------------
+The WAR file is similar to a JAR file, but for web applications. To compile the project into a WAR file, do as the following:
+
+Run the copy command and substitute the <...> with the folder of the project with the source java code and JSP:
+copy C:\tomcat\lib\servlet-api.jar <...>
+
+Go to the folder of the project with the source code and run:
+javac MyClass.java -classpath servlet-api.jar
+
+To transform this into a war file:
+jar cfv my_webapp.war hello.jsp WEB-INF
+
+------------------------------------------------------------------------------------------------------------------------
+JSP
+------------------------------------------------------------------------------------------------------------------------
+OBSERVATIONS:
+All the JSPs that run on Tomcat actually go through Jasper which in turn converts the JSP files into Servlet Objects
+
+-------------------------------------------------------------------------------------------
+SYNTAX:
+The syntax to convert to Java code is:
+
+<%= ... %>
+
+Example:
+<%= request.getParameter("name") %>
+
+OBJECTS AVAILABLE:
+----------------------------------------------------
+Object Reference Name           Object Type
+----------------------------------------------------
+out                             JspWriter
+request                         HttpServletRequest
+response                        HttpServletResponse
+config                          ServletConfig
+application                     ServletContext
+session                         HttpSession
+pageContext                     PageContext
+page                            Object
+exception                       Throwable
+
+
+-------------------------------------------------------------------------------------------
+Also, you can use Expression Language (EL) to do this:
+
+${ ... }
+
+Example:
+${param.name}           -> I think this is JS
+
+EL IMPLICIT MAP OBJECTS:
+----------------------------------------------------
+Map Reference Name
+----------------------------------------------------
+param
+paramValues
+header
+headerValues
+cookie
+pageContext
+initParam
+exception
+pageScope
+requestScope
+sessionScope
+applicationScope
+
+
+-------------------------------------------------------------------------------------------
+Also, you can write Java code with multiple lines (JSP Scriplets):
+
+<% ... %>
+
+Example:
+<%@ page import="java.util.Locale" %>               -> Do not forget the import
+<html>
+<body>
+    <h1>
+<%
+    String name = request.getParameter("name");
+    if(name == null) name = "";
+    ...
+    out.println(greeting + " " + name);
+%>
+   </h1>
+</body>
+</html>
+
+
+-------------------------------------------------------------------------------------------
+You can declare entire methods inside the JSP using the following syntax (JSP Declarations):
+
+<%! ... %>
+
+Example:
+<%!
+    public String getName(HttpServletRequest req) {
+        String name = req.getParameter("name");
+        return name;
+    }
+%>
+<h1>Hello <%= getName(request) %> </h1>
+
+------------------------------------------------------------------------------------------------------------------------
+JavaBeans API
+------------------------------------------------------------------------------------------------------------------------
+It's nice to be able to write Java code in the JSP, but it's even better if we can just separate the JSP from the Java
+code. The Java code stays in separate Classes and Methods and the JSP just call those methods.
+
+To do this, we use JavaBeans API. JavaBeans properties:
+No-Arg Constructor:
+- A bean must have a no-arg constructor
+
+Properties:
+- A bean may have state in the form properties
+
+Methods:
+- Properties must be accessible via getters and setters. Non-property methods allowed
+
+Introspection:
+- Properties must be discoverable using reflection
+
+Persistence:
+- A bean's properties must be serializable
+
+Events:
+- Java beans can support a specific event API as a publisher or listener
+
+EXAMPLES:
+<%@ page import="com.example.MyBeanClass" %>
+<html>
+<body>
+    <jsp:useBean id="helper" class="com.example.MyBeanClass"
+        scope= "page | request | session | application"/>
+
+    <h1>Hello <%= helper.getName(request) %> </h1>
+
+</body>
+</html>
+
+The jsp:useBean tag in html instantiates an object of the declared class if it wasn't instantiated already.
+Use the 'scope' attribute to specify to what level the object created will be used:
+->  page            Across the same page
+->  request         For each request
+->  session         For the entire session
+->  application     1 object for the entire application
+
+
+------------------------------------------------------------------------------------------------------------------------
+JSP Standard Tag Libraries
+------------------------------------------------------------------------------------------------------------------------
+JSTL Core
+-> Control and Flow
+
+JSTL Formatting
+-> Date/Number Formatting Internationalization
+
+JSTL Functions
+-> EL Utility Functions
+
+JSTL XML
+-> Parsing XML
+
+JSTL SQL
+-> Executing SQL
+
+--------------------------
+JSTL Core
+--------------------------
+IMPORTING:
+<%@ taglib prefix = "c" uri = "http://java.sun.com/jsp/jstl/core" %>
+
+TAGS:
+<c:if>
+<c:otherwise>
+<c:choose>
+<c:catch>
+<c:forEach>
+<c:forTokens>
+<c:when>
+<c:import>
+<c:redirect>
+<c:remove>
+<c:set>
+<c:url>
+<c:out>
+<c:param>
+
+--------------------------
+JSTL Functions
+--------------------------
+IMPORTING:
+<%@ taglib prefix = "fn" uri = "http://java.sun.com/jsp/jstl/functions" %>
+
+FUNCTIONS:
+contains()
+containsIgnoreCase()
+endsWith()
+indexOf()
+length()
+startsWith()
+endsWith()
+exception
+substring()
+substringAfter()
+substringBefore()
+replace()
+trim()
+split()
+toUpperCase()
+toLowerCase()
+
+--------------------------
+JSTL Formatting
+--------------------------
+IMPORTING:
+<%@ taglib prefix = "fmt" uri = "http://java.sun.com/jsp/jstl/fmt" %>
+
+TAGS:
+<fmt:formatDate>
+<fmt:formatNumber>
+<fmt:timeZone>
+<fmt:parseDate>
+<fmt:parseNumber>
+<fmt:setTimeZone>
+<fmt:requestEncoding>
+<fmt:bundle>
+<fmt:setBundle>
+<fmt:setLocale>
+<fmt:param>
+<fmt:message>
+
+------------------------------------------------------------------------------------------------------------------------
+FILTERS
+------------------------------------------------------------------------------------------------------------------------
+Filters are interceptors
+- Introduces qualities of service
+- Can modify the behavior
+
+OBSERVATIONS:
+- Filters are objects (classes) that are created by developers and distributed with the WAR file
+- They are instantiated and managed by the Tomcat architecture
+- The idea of filters is that they can get access to the request and response before they go to the servlet and after they
+  have returned from the servlet (see example below)
+- They are used for:
+--- Authentication
+--- Data Compression
+--- Logging
+--- Tokenizing
+--- Encryption
+--- Validation
+- Filters can be chained, example: LogFilter -> AuthFilter -> ZipFilter
+
+EXAMPLE:
+@WebFilter(filterName = "MyFilter", urlPatterns = {"/*"})
+public class MyFilter extends HttpFilter {
+
+    @Override
+    public void doFilter(HttpServletRequest req, HttpServletResponse resp, FIlterChain chain) throws IOException, ServletException {
+
+        // code to execute BEFORE servlet
+
+        chain.doFilter(req, resp);
+
+        // code to execute AFTER servlet
+
+    }
+}
+
+------------------------------------------------------------------------------------------------------------------------
+LISTENERS
+------------------------------------------------------------------------------------------------------------------------
+Listeners are observers
+- Do not modify the behavior
+- React to lifecycle and state changes
+- Used to monitor and observe (log)
+
+
+                Servlet Context Listeners           Http Session Listeners          Servlet Request Listeners
+
+Lifecycle       ServletContextListener              HttpSessionListener             ServletRequestListener
+Events                                              HttpSessionActivationListener   AsyncListener
+
+
+State           ServletContextAttributeListener     HttpSessionAttributeListener    ServletRequestAttributeListener
+Change                                              HttpSessionIdListener
+Events                                              HttpSessionBindingListener
+
+
+OBSERVATIONS:
+- Note that the methods of the listeners don't receive the request/response objects, so it can't change or alter the
+  processing of the messages
+
+
+EXAMPLE:
+@WebListener
+public final class My_ServletContextListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        ServletContext context = event.getServletContext();
+        context.log("-- My_ServletContextListener.contextInitialized()");
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent event) {
+        ServletContext context = event.getServletContext();
+        context.log("-- My_servletContextListener.contextDestroyed()");
+    }
+}

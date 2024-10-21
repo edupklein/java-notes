@@ -1,0 +1,32 @@
+Run a Java class file in JRE (see examples below):
+- java ClassFile.class
+- java ClassFile
+- java C:\Users\I753130\IdeaProjects\ClassFile.class
+
+
+Compile a Java file to binary code:
+- javac ClassFile.java
+--- This will create a new file called ClassFile.class
+
+
+Building/creating JAR file for the Java project:
+- jar cvf ProjectName.jar .
+--- This won't work because the MANIFEST.MF is created automatically and will not specify the class to start running the application
+
+- jar cvmf TC-MANIFEST.MF ProjectName.jar .
+--- This specifies the manifest file named TC-MANIFEST.MF to be considered when creating the jar file
+--- For this to work, there needs to be a TC-MANIFEST.MF file in the folder
+--- Example:
+----- TC-MANIFEST.MF
+------- Main-Class: com.example.MainClass
+
+Running JAR file:
+- java -jar ProjectName.jar
+
+
+WAR FILE:
+Go to the folder of the project with the source code and run:
+javac MyClass.java -classpath servlet-api.jar
+
+To transform this into a war file:
+jar cfv my_webapp.war hello.jsp WEB-INF

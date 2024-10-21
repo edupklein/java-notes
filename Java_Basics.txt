@@ -1,0 +1,233 @@
+b ---------------------------------------------------------------------------------------------
+PRIMITIVE TYPES
+---------------------------------------------------------------------------------------------
+Category    Type        Bits        Min value           Max value               Literal form
+---------------------------------------------------------------------------------------------
+Integer     byte        8           -128                    127                         0
+Integer     short       16          -32768                  32767                       0
+Integer     int         32        -2147483648           2147483647                      0
+Integer     long        64      -9223372036854775808    9223372036854775807             0L
+
+Floating    float       32          1.4 x 10^-45        3.4 x 10^38                     0.0f
+Floating    double      64          4.9 x 10^-324       1.7 x 10^308             0.0 or 0.0d
+
+Character   char        8          ASCII Table - between 0 and 255
+            Ex.: 'U' or '\u00DA' -> Ú (giving the hex value of the ASCII table character with 4 digits)
+
+Boolean     boolean     1          true or false
+
+---------------------------------------------------------------------------------------------
+OBSERVATIONS
+---------------------------------------------------------------------------------------------
+
+Primitive types are stored by value
+Parameters of primitive types of methods are also passed by value
+
+Objects are stored by reference
+Parameters of objects of methods are passed by reference
+
+-----------------------
+
+'final' variables can only have 1 value, once it's assigned, it never changes.
+- It's possible to create a final variable, not assign it to anything and then do it later in the code
+
+-----------------------
+
+Conditional Logical Operators
+&& and || -> the AND and OR operators only check the right side if it needs to
+
+Ex.: false && ---   In this case, if the first side is false, it doesn't need to check the other because it's going to be false
+     true || ---    In this case it's the same thing
+
+This is useful when protecting the if statement for errors, such as:
+- if(divisor != 0 && dividend / divisor > 30)
+- if 'divisor' is zero, it won't execute the rest of the other condition
+
+Other way to write the if statement above would be:
+- result = divisor != 0 ? dividend / divisor > 30 : 0.0d
+
+-----------------------
+
+Switch statement supports only the primitive types:
+- byte, short, int, long, char
+
+---------------------------------------------------------------------------------------------
+TYPE CONVERSIONS
+---------------------------------------------------------------------------------------------
+Implicit:
+    int intValue = 50;
+    long longValue = intValue;
+
+For this conversion, the compiler does the conversion automatically, so the variable 'longValue' stores a long
+
+When mixing primitive types (convert every variable to said type, to then do the equation):
+- Mixed integer sizes -> Uses largest integer in equation
+- Mixed floating point sizes -> Uses largest double in equation
+- Mixed integer and floating sizes -> Uses larges floating point (flot or double) in the equation
+
+
+Explicit:
+    int intValue = 50;
+    short shortValue = (short) intValue;
+
+For this conversion, the compiler does what you told it to.
+
+Be aware of side effects, such as:
+- Narrowing conversions -> significant bits may be discarded (int to short)
+- Floating point to integer -> fraction portion is discarded
+- Integer to floating point -> precision may be lost when converting large values. Ex.: 100000 (int) turns to 99999.999 (float)
+
+---------------------------------------------------------------------------------------------
+CONDITIONAL ASSIGNMENT
+---------------------------------------------------------------------------------------------
+int value1 = 7;
+int value2 = 5;
+int maxValue = value1 > value2 ? value1 : value2;
+
+syntax -> result = condition ? true-value : false-value;
+
+---------------------------------------------------------------------------------------------
+STRING BASICS
+--------------------------------------------------------------------------------------------
+Operation                           Methods
+--------------------------------------------------------------------------------------------
+Length                              length
+Create String from existing one     concat, replace, toLowerCase, toUpperCase, trim, split
+Extract substring                   chatAt, substring
+Test substring                      contains, endsWith, startsWith, indexOf, lastIndexOf
+Comparison                          equals, equalsIgnoreCase, isEmpty, compareTo, compareToIgnoreCase
+Formatting                          format
+String for non-string               valueOf
+
+-----------------------
+Strings are immutable;
+When you create a String, it creates a 'pointer' that points to the Object String created
+
+So, this code:
+String s1 = "I love";
+s1 += " Java";
+
+it first creates the Object String that has the value "I love"
+then, it assigns it to 's1'
+then, it creates the Object String that has the value "I love Java"
+then, it assigns it to 's1'
+
+So, underneath, there are 2 String objects and the 's1' points to the last String Object assigned to it
+-----------------------
+STRINGBUILDER
+You can use the StringBuilder class to create a String on the go, since creating multiple Strings each time you
+concatenate Strings, is not efficient. Example:
+
+String location = "Florida";
+int flightNumber = 175;
+
+// Create StringBuilder object and add values
+StringBuilder sb = new StringBuilder(40); // this parameter is optional, it's used to create a buffer of 40 bytes
+sb.append("I flew to ");
+sb.append(location);
+sb.append(" on Flight #");
+sb.append(flightNumber);
+
+// Extract value from StringBuilder
+String message = sb.toString();
+
+// Insert value in the String
+String time = "9:00";
+int pos = sb.indexOf(" on");
+sb.insert(pos, " at ");
+sb.insert(pos + 4, time);
+-----------------------
+STRING FORMATTING
+Similar to the StringBuilder, there's also another method to format a String as shown below:
+
+String s2 = "format";
+int i1 = 15;
+String s1 = String.format("This String is being formatted using the %s method and this %d is a number", s2, i1);
+
+For the formatting it's similar to C:
+%[argument index][flags][width][precision]conversion
+
+        Meaning                 Type            Example value   Result
+d       Decimal                 Integral        32              32
+x X     Hex                     Integral        32              20
+f       Decimal                 Floating Point  123.0           123.00000000
+e E     Scientific notation     Floating point  123.0           1.23000000e+02
+s       String                  General         "Hello"         Hello
+
+Flag        Meaning             Example
+#           Include radix       Hex:%x = Hex:20  //  Hex:%#x = Hex:0x20
+0           Zero-padding        X:%d = X:481     //  X:%5d = X:  481    //   X:%05d = X:00481
+-           Left justify        X:%-4d,  =  X:481 , There's 4 characters allocated, but it's alligned to the left
+,           Grouping separator  X:%d = X:481321  //  X:%,d = X:481,321  //  X:%,.2f = X:481,321.00
+Space       Space when positive X:% d = X: 481   //  X:% d = X:-321
++           Always show sign    X:%+d = X:+481   //  X:%+d = X:-321
+(           Enclose negatives   X:%(d = X:481    //  X:%(d = X:(321)    //  X:% (d = X: 481
+
+
+
+Index       Meaning
+index$      Index of argument to use (1-based)
+<           Corresponds to same argument as previous format specifier
+
+Ex.:
+int A = 100, B = 200, C = 300;
+S1 = String.format("%3$d %1$d %2$d", A, B, C);
+Result -> 300 100 200   (the parameter being displayed is specified)
+
+s2 = String.format("%3$d %<d %2$d", A, B, C);
+Result -> 300 300 200   (When using '<', the parameter copies the previous one, so the %<d becomes %3$d)
+-----------------------
+IMPORTANT:
+In this case, to compare Strings, the statement below doesn't work:
+if(string1 == string2) ...
+
+- Because string1 and string2 actually have references to String Objects and not the value of the Strings themselves
+
+To compare, there a method that needs to be called:
+if(string1.equals(string2)) ...
+
+
+There is a method to ensure that String variables have the same reference of the same String Value. Example:
+
+String s1 = "I love Java";
+
+String s2 = "I love Java";
+
+if(s1 == s2) // false
+
+String s3 = s1.intern();
+String s4 = s2.intern();
+
+if(s3 == s4) // true
+
+When we call the .intern() method of a String, it first checks to see if there's another String object intern with that
+value and returns the reference of that object, if it doesn't find one, it creates a new intern String Object
+
+So, in the line below, it checks to see if there's an intern String object with the value of s1 (I love java). There's
+none, so it creates an intern String Object:
+
+String s3 = s1.intern();
+
+
+In the next line shown below, it checks if there's an intern String Object with the value of the s2 String (I love Java)
+and there is! The s3 variable is an intern String Object with the same value of "I love Java", so it returns the same
+reference of s3 to s4
+
+String s4 = s2.intern();
+---------------------------------------------------------------------------------------------
+DATE AND TIME CLASSES
+---------------------------------------------------------------------------------------------
+Instant             -> used to compare between instances in time
+LocalTime           -> time of the day              -> 09:15:10.000000
+LocalDate           -> date only                    -> 2024-09-23
+LocalDateTime       -> date and time of the day     -> 2024-09-23T09:15:10.000000
+ZonedDateTime       -> equal to LocalDateTime, but considers time zones
+DateTimeFormatter   -> formats the date. Ex.:
+                       LocalDate today = LocalDate.now();
+                       DateTimeFormatter usDateFormat = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+                       System.out.println(today.format(usDateFormat));
+
+                       can also be used to parse specific date. Ex.:
+                       String usDateString = "07-04-2024";
+                       DateTimeFormatter usDateFormat = DateTimeFormatter.ofPattern("MM-dd-yyyy");
+                       LocalDate theDate = LocalDate.parse(usDateString, usDateFormat);

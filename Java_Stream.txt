@@ -1,0 +1,215 @@
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ExemploStream {
+public static void main(String[] args) {
+List<Integer> numeros = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+
+// Usando streams para filtrar e mapear os números
+List<Integer> quadradosPares = numeros.stream()
+.filter(n -> n % 2 == 0) // Filtra números pares
+.map(n -> n * n) // Mapeia cada par para seu quadrado
+.collect(Collectors.toList()); // Coleta o resultado e transforma em uma List
+
+------------------------------------------------------------------------------------------------------------------------
+OBSERVAÇÕES
+------------------------------------------------------------------------------------------------------------------------
+Os Streams são muito utilizados no dia a dia quando se está varrendo collections e para fazer operações em cima das
+collections.
+
+Quando se tratando do uso de Classes, é importante notar que cada operação das Streams ficam no baixo nível.
+
+No uso de DSL (Domain-Specific Language) as classes e implementações do negócio e da regra de negócio ficam em diversas
+classes e o uso delas fica dividido em alto e baixo nível
+
+Conceitos geralmente são divididos em suas próprias classes de Streams que implementam uma Stream específica de um tipo
+de classe
+
+E classes "Composite" são utilizadas para representar um grupo de Stream de determinada classe.
+
+EXEMPLOS:
+
+                                CompositePainter
+                        |               |                   |                       |
+                WorkStream          PainterStream       MoneyStream         DurationStream
+
+Neste exemplo, CompositePainter seria uma classe que imita um Painter ou mais de um painter (um grupo de painter)
+Para cada painter, o mesmo é trabalhado no PainterStream, que guarda um Stream de Painters e as implementações dos seus
+métodos específicos dos Streams são feitos nessa classe PainterStream
+
+O mesmo vale para o WorkStream, MoneyStream e DurationStream, no qual, cada um trabalha conceitos de Work, Money e Duration
+em Streams. Essas Classes implementam geralmente uma interface de Stream e que dão Override no método específico (ou
+criam métodos novos) que retornam o resultado de um código específico daquela classe.
+
+Exemplo: o código abaixo pode ser descrito dentro do método de MoneyStream
+
+public Money getTotalCostOfPainters() {
+    this.moneyStream
+    .reduce(Money.ZERO, (acc, current) -> current.returnMoney(totalNumber).add(acc), (cost1, cost2) -> cost1.add(cost2))
+    .get();
+}
+
+E poderia ser chamado desta forma:
+    MoneyStream ms = new MoneyStream(painterStream);
+    ms.getTotalCostOfPainters();
+
+------------------------------------------------------------------------------------------------------------------------
+Transformar uma Collection em uma Stream (stream)
+------------------------------------------------------------------------------------------------------------------------
+arrayList.stream()
+
+------------------------------------------------------------------------------------------------------------------------
+Transformar uma Stream em uma Collection (collect)
+------------------------------------------------------------------------------------------------------------------------
+stream().map()...collect(Collectors.toList());
+- Outros exemplos:
+--- Collectors.toSet();
+--- Collectors.toMap();
+--- Collectors.joining(); -> concatena elementos em uma String
+--- Collectors.groupingBy(); -> retorna um Map
+
+Ex.:
+Map<String, List<Product>> prods = products
+    .stream()
+    .filter(product -> product.getWeight() > 30)
+    .sorted(comparingInt(Product::getWeight))
+    .collect(Collectors.groupingBy(Product::getName));  // Neste ponto retorna um Map do qual o value é a lista de
+                                                            produtos e a key é o nome (informado pelo Product::getName)
+
+Outra forma de usar o groupingBy é passando mais um valor no parâmetro, exemplo:
+    .collect(groupingBy(Product::getName), counting());
+- Neste ponto, irá gerar um Map de <String, Long> onde counting é um método sendo passado para contar a quantidade de
+cada String da chave há na Stream
+
+
+------------------------------------------------------------------------------------------------------------------------
+Filtrar (filter)
+------------------------------------------------------------------------------------------------------------------------
+stream().filter(n -> n % 2 == 0)
+- O método recebe um 'Predicate' que é uma interface funcional (pode receber lambda expressions ou method references)
+- Retorna um stream novo
+- O método aceita uma lambda expression (como no exemplo acima)
+- O método também aceita uma referência a outro método. Ex.:
+--- stream().filter(this::meuMetodo)
+--- Neste exemplo, irá passar a referência do método 'meuMetodo' da classe atual e como parâmetro irá passar o objeto do Stream
+- O código deve retornar 'true' ou 'false' (independente se for lambda expression ou method reference)
+
+------------------------------------------------------------------------------------------------------------------------
+Mapear (map)
+------------------------------------------------------------------------------------------------------------------------
+stream().map(n -> n * n)
+- O método recebe uma 'Function' que é uma interface funcional (pode receber lambda expressions ou method references)
+- Retorna um stream novo
+- O método aceita uma lambda expression (como no exemplo acima)
+- O método também aceita uma referência a outro método. Ex.:
+--- stream().filter(this::meuMetodo)
+--- Neste exemplo, irá passar a referência do método 'meuMetodo' da classe atual e como parâmetro irá passar o objeto do Stream
+- O código deve executar um algoritmo que irá manipular cada elemento do stream e fazer algo com ele.
+
+------------------------------------------------------------------------------------------------------------------------
+Ordenar (sorted)
+------------------------------------------------------------------------------------------------------------------------
+stream().sorted(comparingInt(Product::getWeight));
+- Recebe um método da classe Comparator. Neste exemplo, o método comparintInt é da classe Comparator.
+--- Seria o mesmo que ter escrito sorted(Comparator.comparingInt(...));
+
+É possível especificar um objeto Comparator para informar no método 'sorted'. Ex.:
+Comparator<Product> byName = Comparator.comparing(Product::getName);
+products.sorted(byName);
+
+
+Se não passar nada como parâmetro do 'sorted', ele irá usar a implementação do Comparable feita no objeto do Stream
+- Para isso, o objeto do Stream deve ter implementado a interface Comparable
+
+------------------------------------------------------------------------------------------------------------------------
+Callback de cada elemento do stream (forEach)
+------------------------------------------------------------------------------------------------------------------------
+stream().forEach(obj -> System.out::println)
+- Serve apenas para ter um callback para fazer algo com cada elemento do Stream
+- Não retorna um novo Stream (como o 'map', ou o 'filter' fazem)
+
+------------------------------------------------------------------------------------------------------------------------
+Teste de valores no stream (match)
+------------------------------------------------------------------------------------------------------------------------
+stream().anyMatch(prod -> prod.getWeight() > 20);       // Retorna true se algum elemento retornar true
+stream().noneMatch(prod -> prod.getWeight() > 20);      // Retorna true se nenhum elemento retornar true
+stream().allMatch(prod -> prod.getWeight() > 20);       // Retorna true se todos os elementos retornarem true
+
+------------------------------------------------------------------------------------------------------------------------
+Achar algum elemento (findFirst   ou   findAny)
+------------------------------------------------------------------------------------------------------------------------
+products.filter(prod -> prod.getName().contains("Chair")).findFirst();
+- Pega primeiro elemento (findFirst) que foi filtrado no 'filter'
+- OBS.: O filter foi só um exemplo, não precisa ser chamado em conjunto com o filter
+
+------------------------------------------------------------------------------------------------------------------------
+Contar elementos (count)
+------------------------------------------------------------------------------------------------------------------------
+products.filter(prod -> prod.getName().contains("Chair")).count();
+- Retorna o número de elementos (count) que foram filtrados no 'filter'
+- OBS.: O filter foi só um exemplo, não precisa ser chamado em conjunto com o filter
+
+------------------------------------------------------------------------------------------------------------------------
+Achar o mínimo (min)
+------------------------------------------------------------------------------------------------------------------------
+Optional<Integer> numero = stream().min(Integer::compareTo)
+- O método min retorna o menor valor do stream
+- É uma 'Aggregate' function
+- Neste exemplo, está usando a referência do método 'compareTo' da classe Integer
+- É possível passar uma lambda expression para passar um parâmetro para comparação, como por exemplo:
+--- min(Comparator.comparing(number -> number.meuMetodoDeComparacao(valorParaComparar)));
+- retorna um objeto único e não uma lista ou um novo stream
+- Este objeto é um Optional<obj>
+- Para tratá-lo depois é necessário fazer conforme o exemplo abaixo:
+--- numero.ifPresent(n -> System.out.println(n));
+
+------------------------------------------------------------------------------------------------------------------------
+Achar o máximo (max)
+------------------------------------------------------------------------------------------------------------------------
+stream().max(comparingInt(Product::getWeight))
+- Semelhante ao método 'sorted' e ao método 'min'
+
+------------------------------------------------------------------------------------------------------------------------
+Reduzir (reduce)
+------------------------------------------------------------------------------------------------------------------------
+Optional<Integer> numero = stream().reduce((acc, current) -> acc.metodoComparacao(valorComparar)
+                                           .compareTo(current.metodoComparacao(valorComparar)) <= 0 ? acc : current)
+
+- O método é semelhante ao min, mas permite uma configuração mais robusta de comparação
+- Também é uma 'Aggregate' function
+- O método pega 2 objetos do Stream e fica os comparando, o objeto 'acc' e o objeto 'current'.
+--- Basicamente o 'acc' é o accumulator object, que é mantido em referencia ao que se quer comparar
+--- O 'current' é o objeto atual do Stream sendo comparado
+--- Os dois objetos são usados como parâmetro para uma função que é executada, esta função retorna um objeto que será o
+    novo 'acc' da próxima iteração
+
+- Outro exemplo usando um valor para comparação e um objeto do Stream:
+--- .reduce(Money.ZERO, (acc, current) -> current.returnMoney(totalNumber).add(acc), (cost1, cost2) -> cost1.add(cost2));
+--- Neste exemplo, é passado um valor inicial para ser o accumulator (Money.ZERO)
+--- Para cada objeto no Stream, é retornado o mesmo tipo de valor (current.returnMoney)
+--- E depois adicionado pelo método .add(acc), onde soma o valor do objeto current atual com a soma dos anteriores acumulados até então
+--- Por fim, há a função combinadora (cost1, cost2) -> cost1.add(cost2) que é opcional só é utilizada quando está se utilizando
+    Streams em paralelo (parallelStream). Neste caso, quando está sendo feito o processamento em paralelo, ao final das threads
+    serem executadas, é executada a função combinadora para combinar o resultado das 2 Threads executando as Streams.
+
+- Esta última função pode ser escrita também como:
+--- .reduce(10, (subtotal, elemento) -> subtotal + elemento, (a, b) -> a + b)
+
+- Outra forma de escrever o reduce é simplificando o Stream e convertendo o Stream em outro dado antes de chamá-lo. Ex:
+--- .filter(Object::isAvailable)                // Stream<Object>
+--- .map(obj -> obj.returnMoney(totalNumber))   // Stream<Money>
+--- .reduce(Money::Add)                         // Optional<Money>
+--- .orElse(Money.ZERO)
+
+------------------------------------------------------------------------------------------------------------------------
+FLATMAP
+------------------------------------------------------------------------------------------------------------------------
+streamOfShipments.flatMap(shipment -> shipment.getLightVanProducts().stream());
+
+Neste exemplo, 'streamOfShipments' é um stream de Lists (Stream<List<Product>>)
+- O método flatMap permite pegar e processar o conteúdo de cada List dessa Stream e jogar numa nova Stream
+- O resultado disso seria uma conversão de:
+--- DE:     Stream<List<Product>>
+--- PARA:   Stream<Product>
+

@@ -1,0 +1,228 @@
+------------------------------------------------------------------------------------------------------------------------
+TYPES OF COLLECTIONS
+------------------------------------------------------------------------------------------------------------------------
+INTERFACES:
+                        Collection
+        List        Set             Queue           Map
+                SortedSet           Deque       SortedMap
+
+IMPLEMENTATIONS:
+List            ->  ArrayList, LinkedList
+Set             ->  HashSet
+SortedSet       ->  TreeSet
+Queue           ->  PriorityQueue
+Deque           ->  LinkedList, ArrayDeque
+Map             ->  HashMap
+SortedMap       ->  TreeMap
+
+COMMOM METHODS:
+- size()                    -> Get number of elements
+- isEmpty()                 -> True if size() == 0, false otherwise
+- add()                     -> Ensure that an element is in the collection
+- addAll()                  -> Add all the elements of the argument collection to this collection
+- remove(element)           -> Remove the element
+- removeAll(collection)     -> Remove all elements of the argument collection
+- retainAll(collection)     -> Remove all the elements of this collection not in the argument collection
+- contains(element)         -> True if the element is in the collection
+- containsAll(collection)   -> True if all the elements of the argument collection are in the collection
+- clear()                   -> Remove all elements
+
+------------------------------------------------------------------------------------------------------------------------
+OBSERVATIONS
+------------------------------------------------------------------------------------------------------------------------
+When doing a forEach loop or doing a for loop "for(Product product : productList)":
+- YOU CAN NEVER ADD OR REMOVE ELEMENTS
+- NEVEEEEEERRR
+
+To remove or add elements whilst iterating the Collection, use the iterator. Ex.:
+
+Iterator<Product> iterator = productList.iterator();
+
+while(iterator.hasNext()){
+
+    Product product = iterator.next();
+
+    if(product.getWeight() > 20) {
+
+        iterator.remove();
+
+    }
+}
+
+------------------------------------------------------------------------------------------------------------------------
+LISTS
+------------------------------------------------------------------------------------------------------------------------
+Lists are collections with iteration order
+- Each element has an index
+- So much so that the commom methods shown above have other signatures using index. Ex.:
+
+void add(int index, E e);
+E get(int index);
+E remove(int index);
+E set(int index, E element);
+boolean addAll(int index, Collection c);
+
+
+SORTING:
+public static final Comparator<Object> BY_WEIGHT = Comparator.comparingInt(Object::getWeight);
+
+productList.sort(Product.BY_WEIGHT);
+
+
+ANOTHER WAY OF CREATING THE COMPARATOR:
+public static final Comparator<Product> BY_WEIGHT = new Comparator<Product>() {
+
+    public int compare(final Product o1, final Product o2) {
+        return Integer.compare(o1.getWeight(), o2.getWeight());
+    }
+}
+
+SUBLISTS (Views):
+lightProducts = products.subList(0, splitPoint);
+
+------------------------------------------------------------------------------------------------------------------------
+MAPS
+------------------------------------------------------------------------------------------------------------------------
+Maps aren't part of the Collections interface. They're an interface of their own.
+
+HashMap allows null KEY and VALUES
+TreeMap allows null VALUES
+
+METHODS:
+V get(Object key)
+boolean containsKey(Object key)
+boolean containsValue(Object value)
+V remove(Object key)
+void clear()
+
+replace(key, value) -> update single value
+replaceAll(BiFunction<K, V, V>) -> replace elements using a function (bifunction is a function with 2 arguments, can be
+                                    implemented with lambda expression)
+remove(key, value)  -> remove a key only if it has a value
+
+getOrDefault -> similar to 'get' method but it returns a default value (instead of null) if the key doesn't exist
+putIfAbsent -> put a value if the value isn't present in the map already
+merge -> uses a function to process values in the map (similar to .reduce() in the Stream API)
+
+EXAMPLES:
+1. Replaces the products in the map with new products with the weight + 10
+
+productMap.replaceAll((id, prod) ->
+{
+    return new Product(id, prod.getName(), prod.getWeight() + 10);
+});
+
+2. Doing a forEach in a Map
+productMap.forEach((id, prod) ->
+{
+    System.out.prinln(prod.getName() + "has an id of " + id);
+});
+
+SUBMAPS (Views):
+--- VIEW 1 ---
+Set<Integer> ids = productsMap.keySet(); // returns a HashSet of the keys in the map
+ids.remove(1); // This will remove the key 1 in the HashSet BUT ALSO the key 1 in the HashMap
+- This happens because the keySet() method returns the reference to the objects in the HashMap
+
+You also can't do the following, since the HashSet is 'linked' with the HashMap
+ids.add(5);
+
+--- VIEW 2 ---
+Collection<Products> products = productsMap.values();
+products.remove(prod1); // This will remove the product in the HashMap as well
+
+--- VIEW 3 ---
+Set<Map.Entry<Integer, Product>> entries = productsMap.entrySet();
+OR
+var entries = productsMap.entrySet(); // this 'var' is the local variable type inference
+
+This approach returns a Set that contains the pairs of Key/Values (called entries).
+for(Map.Entry<Integer, Product> entry : entries) {
+    System.out.println(entry);
+    System.out.println(entry.getKey());
+    System.out.println(entry.getValue());
+}
+
+ALSO, if you change the entry, you change the content in the Map
+
+------------------------------------------------------------------------------------------------------------------------
+FACTORY METHODS
+------------------------------------------------------------------------------------------------------------------------
+Always when dealing with Collections, it's a good practice to encapsulate the Collections inside the class that
+represents the business. In the example, for a list of Products, the list was declared inside the Shipment Class. When
+adding products to the list, it was done through the shipment object and methods.
+
+When encapsulating collections in a class, there's the need to "shield" the getter and setter
+Let's say I have the following class:
+
+public class Shipment() {
+    private List<Product> shipment;
+
+    public List<Product> getShipment() {
+        return shipment;
+    }
+}
+
+When calling the 'getShipment' method, it'll return the reference of the list, allowing the caller to do whatever it
+wants. To prevent that, do this:
+
+
+shipment = Collections.unmodifiableList(products.subList(0, splitPoint));
+
+
+When referencing a object of the List, the 'unmodifiableList' method doesn't allow to modify the list
+
+NOTE: Similar to 'entrySet' method, the resulting List/Map of the 'unmodifiableList' method points to the original List
+so, if you change the original list, the changes are shown in the unmodifiableList as well.
+
+Other Factory methods:
+- Collections.unmodifiableList
+- Collections.unmodifiableMap
+- Map.copyOf                        -> This method copies the content of the Map, creating another object, but the copy
+                                       doesn't allow to change the Map/List, similar to 'unmodifiableList'. The difference
+                                       between them is that 'copyOf' doesn't show changes to the original list/map
+- Map.of                            -> Creates a immutable Collection. Ex.:
+Map<String, Integer> myMap = Map.of("UK", 67, "USA", 328)
+
+DIFFERENCES:
+- unmodifiableList / unmodifiableMap
+--- Creates unmodifiable view of the Collection (can't add values, but can see the content of the original Collection, even if it changes)
+
+- copyOf
+--- Creates immutable copy of the Collection (can't add values and can't see changes in the original Collection
+
+- of
+--- Creates immutable Collection from scratch (can't change the Collection once it's created)
+
+OTHER FACTORY METHODS:
+- Collections.emptyList()               -> Creates static empty immutable Collection. Can't have values added or removed
+- Collections.emptyMap()                -> Useful when you need to pass or return a Collection with empty value (memory efficient)
+- Collections.emptySet()
+- Collections.singletonList("one")      -> Creates immutable Collection with 1 value.
+- Collections.singletonMap(1, "one")    -> Useful when you need to pass or return a Collection with one value (memory efficient)
+- Collections.singleton(1)              -> This creates a Set
+
+The 'of' method is useful to create static values that can be consulted or checked
+
+List.of                     -> immutable List. Can have more than 10 values (uses varargs to do that)
+Map.of                      -> immutable Map. Can have only 10 values (there's not a way to use varargs in this situation)
+Map.ofEntries(              -> immutable Map. This is the way of creating the map with more than 10 elements
+    Map.entry("UK", 67),
+    Map.entry("USA", 328),
+    ...);
+
+MORE METHODS:
+var myList = new ArrayList<Products>();
+Collections.addAll(myList, value1, value2, value3, ...)       -> Add multiple values to the list. This is a mutable list
+
+Product lightProduct = Collections.min(myList, Product.BY_WEIGHT);
+- This 'min' method is similar to the Stream method, but it is from the Collections
+- It returns just 1 element
+
+Product heavyProduct = Collections.max(myList, Product.BY_WEIGHT);
+- This 'min' method is similar to the Stream method, but it is from the Collections
+- It returns just 1 element
+
+Collection.shuffle(myList)  -> Changes the order of the elements in the collection
+
+Collection.fill(myList, null) -> Changes all the elements to null
